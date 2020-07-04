@@ -135,12 +135,15 @@ int main(unused int argc, unused char *argv[]) {
       /* REPLACE this to run commands as programs. */
       char *func = tokens_get_token(tokens, 0);
       size_t num_args = tokens_get_length(tokens);
-      char *args[num_args + 1];
+      char **args = (char**) malloc(sizeof(char**) * (num_args + 1));
       int status;
       pid_t cpid;
+      char *word;
 
       for (int i = 0; i < num_args; i++) {
-	  args[i] = tokens_get_token(tokens, i);
+	 word = tokens_get_token(tokens, i);
+	 args[i] = (char *) malloc(sizeof(char *) * (strlen(word) + 1));
+	 args[i] = word;
       }
 
       args[num_args + 1] = NULL;
@@ -151,6 +154,11 @@ int main(unused int argc, unused char *argv[]) {
       } else if (cpid == 0) {
          execv(func, args);
       }
+       
+      for (int i = 0; i < num_args; i++) {
+	  free(args[i]);
+      }
+      free(args);
     }
 
     if (shell_is_interactive)
