@@ -213,6 +213,7 @@ int main(unused int argc, unused char *argv[]) {
 			fflush(stdout);
 			dup2(out, 1);
 			execv(args[0], args);
+			close(out);
 		    }
 		} else {
 		    execv(args[0], args);
