@@ -1,5 +1,3 @@
-#include <ctype.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -112,6 +110,27 @@ void init_shell() {
   }
 }
 
+bool  get_func(char *func) {
+    printf("inside get_func: %s", func);
+    char *path = getenv("PATH");
+    char *token = strtok(path, ":");
+    char *fullpath = malloc(1024*sizeof(char));
+
+     while (token != NULL) {
+	 strcpy(fullpath,token);
+	 strcat(fullpath, "/");
+	 strcat(fullpath, func);
+	 if (access(fullpath, F_OK) == 0) {
+	     strcpy(func, fullpath);
+	     free(fullpath);
+	     return true;
+         }
+	 token = strtok(NULL, ":");
+     }
+     free(fullpath);
+     return false;
+}
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
@@ -133,33 +152,33 @@ int main(unused int argc, unused char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
-      char *func = tokens_get_token(tokens, 0);
-      size_t num_args = tokens_get_length(tokens);
-      char **args = (char**) malloc(sizeof(char**) * (num_args + 1));
       int status;
-      pid_t cpid;
-      char *word;
+      pid_t cpid = fork();
+      if (cpid == 0) {
+	  size_t num_args = tokens_get_length(tokens);
+          char *args[num_args + 1];
+         
+          for (int i = 0; i < num_args; i++) {
+         	args[i] = tokens_get_token(tokens, i);
+     	  }
 
-      for (int i = 0; i < num_args; i++) {
-	 word = tokens_get_token(tokens, i);
-	 args[i] = (char *) malloc(sizeof(char *) * (strlen(word) + 1));
-	 args[i] = word;
-      }
+          args[num_args] = NULL;
+      	  bool found = true;
 
-      args[num_args + 1] = NULL;
-      cpid = fork();
-
-      if (cpid > 0) {
-         wait(&status);
-      } else if (cpid == 0) {
-         execv(func, args);
+      	  if (access(args[0], F_OK) != 0) {
+        	found = get_func(args[0]);
+	  }	
+	  if (!found) {
+            	printf("the file doesn't exist\n");
+       	  } else {
+          	execv(args[0], args);
+	  }
+      } else if (cpid > 0){
+	  wait(&status);
+      } else {
+	  perror("fork failed\n");
       }
-       
-      for (int i = 0; i < num_args; i++) {
-	  free(args[i]);
-      }
-      free(args);
-    }
+   }
 
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
