@@ -110,8 +110,38 @@ void init_shell() {
   }
 }
 
+int redirect_input(struct tokens *tokens) {
+    size_t len = tokens_get_length(tokens);
+    int index = -1;
+    char *token_check;
+
+    for (int i = 0; i < len; i++) {
+        token_check = tokens_get_token(tokens, i);
+	if (strcmp(token_check, "<") == 0) {
+	    index = i + 2;
+	    return index;
+	}
+    }
+    return index;
+}
+
+int redirect_output(struct tokens *tokens) {
+    size_t len = tokens_get_length(tokens);
+    int index = -1;
+    char *token_check;
+
+    for (int i = 0; i < len; i++) {
+        token_check = tokens_get_token(tokens, i);
+        if (strcmp(token_check, ">") == 0) {
+            index = i + 2;
+            return index;
+        }
+    }
+    return index;
+}
+
+
 bool  get_func(char *func) {
-    printf("inside get_func: %s", func);
     char *path = getenv("PATH");
     char *token = strtok(path, ":");
     char *fullpath = malloc(1024*sizeof(char));
@@ -170,8 +200,24 @@ int main(unused int argc, unused char *argv[]) {
 	  }	
 	  if (!found) {
             	printf("the file doesn't exist\n");
+		return 1;
        	  } else {
-          	execv(args[0], args);
+	      	int index = redirect_output(tokens);
+		if (index > 0) {
+		    char* file = tokens_get_token(tokens, index);
+		    int out = open(file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+		    if (out == -1) {
+			perror("Cannot open output file\n");
+                        return 0;
+		    } else {
+			fflush(stdout);
+			dup2(out, 1);
+			close(out);
+			execv(args[0], args);
+		    }
+		} else {
+		    execv(args[0], args);
+		}
 	  }
       } else if (cpid > 0){
 	  wait(&status);
@@ -187,6 +233,5 @@ int main(unused int argc, unused char *argv[]) {
     /* Clean up memory */
     tokens_destroy(tokens);
   }
-
   return 0;
 }
