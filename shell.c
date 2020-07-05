@@ -205,12 +205,11 @@ int main(unused int argc, unused char *argv[]) {
 	      	int index = redirect_output(tokens);
 		if (index > 0) {
 		    char* file = tokens_get_token(tokens, index);
-		    int out = open(file, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+		    int out = open(file, O_WRONLY | O_CREAT | O_TRUNC);
 		    if (out == -1) {
 			perror("Cannot open output file\n");
                         return 0;
 		    } else {
-			fflush(stdout);
 			dup2(out, 1);
 			close(out);
 			execv(args[0], args);
