@@ -118,7 +118,7 @@ int redirect_input(struct tokens *tokens) {
     for (int i = 0; i < len; i++) {
         token_check = tokens_get_token(tokens, i);
 	if (strcmp(token_check, "<") == 0) {
-	    index = i + 2;
+	    index = i + 1;
 	    return index;
 	}
     }
@@ -133,7 +133,7 @@ int redirect_output(struct tokens *tokens) {
     for (int i = 0; i < len; i++) {
         token_check = tokens_get_token(tokens, i);
         if (strcmp(token_check, ">") == 0) {
-            index = i + 2;
+            index = i + 1;
             return index;
         }
     }
