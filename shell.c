@@ -222,7 +222,7 @@ int main(unused int argc, unused char *argv[]) {
 		    int out = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
 		    if (out == -1) {
 			perror("Cannot open output file\n");
-                        return 0;
+                        return 1;
 		    } else {
 			dup2(out, 1);
 			close(out);
