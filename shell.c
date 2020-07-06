@@ -185,12 +185,20 @@ int main(unused int argc, unused char *argv[]) {
       int status;
       pid_t cpid = fork();
       if (cpid == 0) {
-          setpgrp();
-	  //signal(SIGTTOU, SIG_IGN);
-	  //if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
-    	//	perror("tcsetpgrp failed");
-	//	return 0;
-	 // }	
+          setpgid(0, 0);
+
+	  if (tcsetpgrp(shell_terminal, getpgrp()) < 0) {
+                perror("tcsetpgrp failed");
+                return 0;
+          }
+
+	 signal(SIGINT, SIG_DFL);
+         signal(SIGQUIT, SIG_DFL);
+         signal(SIGTSTP, SIG_DFL);
+         signal(SIGCONT, SIG_DFL);
+         signal(SIGTTIN, SIG_DFL);
+         signal(SIGTTOU, SIG_IGN);
+	 signal(SIGTERM, SIG_DFL);
 
 	  size_t num_args = tokens_get_length(tokens);
           char *args[num_args + 1];
@@ -241,27 +249,26 @@ int main(unused int argc, unused char *argv[]) {
 		} else {
 		    execv(args[0], args);
 		}
-	  }
-      } else if (cpid > 0){
-	  setpgid(cpid, cpid);
-	  //signal(SIGINT, SIG_IGN);
-	  //signal(SIGQUIT, SIG_IGN);
-          //signal(SIGTERM, SIG_IGN);
-	  //signal(SIGTSTP, SIG_IGN);
-	  wait(&status);
-	  //signal(SIGINT, SIG_DFL);
-	  //signal(SIGQUIT, SIG_DFL);
-          //signal(SIGTERM, SIG_DFL);
-          //signal(SIGTSTP, SIG_DFL);
-	  //if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
-            //    perror("tcsetpgrp failed");
-            //    return 0;
-         // }    
-      } else {
-	  perror("fork failed\n");
       }
+    } else if (cpid > 0){
+	setpgid(cpid, cpid);
+	if (tcsetpgrp(shell_terminal, cpid) < 0) {
+                perror("tcsetpgrp failed");
+                return 0;
+          }
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGTERM, SIG_IGN);
+	wait(&status);
+	tcsetpgrp(shell_terminal, shell_pgid);
+	signal(SIGINT, SIG_DFL);
+        signal(SIGQUIT, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
+   } else {
+	  perror("fork failed\n");
    }
-
+   }
+  
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
       fprintf(stdout, "%d: ", ++line_num);
