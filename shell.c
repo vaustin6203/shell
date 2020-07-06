@@ -185,13 +185,12 @@ int main(unused int argc, unused char *argv[]) {
       int status;
       pid_t cpid = fork();
       if (cpid == 0) {
-          setpgrp();
-	  signal(SIGTTOU, SIG_IGN);
-	  printf("Child pid: %d, pgid: %d\n", getpid(), getpgrp());
-	  if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
-    		perror("tcsetpgrp failed");
-		return 0;
-	  }	
+          //setpgrp();
+	  //signal(SIGTTOU, SIG_IGN);
+	  //if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
+    	//	perror("tcsetpgrp failed");
+	//	return 0;
+	 // }	
 
 	  size_t num_args = tokens_get_length(tokens);
           char *args[num_args + 1];
@@ -212,19 +211,23 @@ int main(unused int argc, unused char *argv[]) {
        	  } else {
                 int index = redirect_input(tokens);
           	if (index > 0) {
+		args[index - 1] = NULL;
+		args[index] = NULL;
               	char *in_file = tokens_get_token(tokens, index);
               	int in = open(in_file, O_RDONLY);
-              	    if (in == -1) {
-                      perror("Cannot open input file");
-                      return 0;
+                   if (in == -1) {
+                        perror("Cannot open input file\n");
+                        return 0;
               	    } else {
-                      dup2(in, 0);
-                      close(in);
+                        dup2(in, 0);
+                        close(in);
               	    }
           	}
-
+                
 	      	index = redirect_output(tokens);
 		if (index > 0) {
+		    args[index - 1] = NULL;
+		    args[index] = NULL;
 		    char* file = tokens_get_token(tokens, index);
 		    int out = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IRGRP | S_IWGRP | S_IWUSR);
 		    if (out == -1) {
@@ -240,13 +243,20 @@ int main(unused int argc, unused char *argv[]) {
 		}
 	  }
       } else if (cpid > 0){
-	  setpgid(cpid, cpid);
-	  signal(SIGINT, SIG_IGN);
-	  signal(SIGQUIT, SIG_IGN);
-          signal(SIGTERM, SIG_IGN);
-	  signal(SIGTSTP, SIG_IGN);
-	  printf("Parent pid: %d, pgid: %d\n", getpid(), getpgrp());
+	 // setpgid(cpid, cpid);
+	  //signal(SIGINT, SIG_IGN);
+	  //signal(SIGQUIT, SIG_IGN);
+          //signal(SIGTERM, SIG_IGN);
+	  //signal(SIGTSTP, SIG_IGN);
 	  wait(&status);
+	  //signal(SIGINT, SIG_DFL);
+	  //signal(SIGQUIT, SIG_DFL);
+          //signal(SIGTERM, SIG_DFL);
+          //signal(SIGTSTP, SIG_DFL);
+	  //if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
+            //    perror("tcsetpgrp failed");
+            //    return 0;
+         // }    
       } else {
 	  perror("fork failed\n");
       }
