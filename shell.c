@@ -185,7 +185,7 @@ int main(unused int argc, unused char *argv[]) {
       int status;
       pid_t cpid = fork();
       if (cpid == 0) {
-          //setpgrp();
+          setpgrp();
 	  //signal(SIGTTOU, SIG_IGN);
 	  //if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
     	//	perror("tcsetpgrp failed");
@@ -243,7 +243,7 @@ int main(unused int argc, unused char *argv[]) {
 		}
 	  }
       } else if (cpid > 0){
-	 // setpgid(cpid, cpid);
+	  setpgid(cpid, cpid);
 	  //signal(SIGINT, SIG_IGN);
 	  //signal(SIGQUIT, SIG_IGN);
           //signal(SIGTERM, SIG_IGN);
