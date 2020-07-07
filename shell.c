@@ -161,6 +161,7 @@ bool  get_func(char *func) {
      return false;
 }
 
+
 int main(unused int argc, unused char *argv[]) {
   init_shell();
 
@@ -182,22 +183,25 @@ int main(unused int argc, unused char *argv[]) {
       cmd_table[fundex].fun(tokens);
     } else {
       /* REPLACE this to run commands as programs. */
+       signal(SIGINT, SIG_IGN);
+       signal(SIGQUIT, SIG_IGN);
+       signal(SIGTSTP, SIG_IGN);
+       signal(SIGTTIN, SIG_IGN);
+       signal(SIGTTOU, SIG_IGN);
+       signal(SIGTERM, SIG_IGN);
       int status;
       pid_t cpid = fork();
       if (cpid == 0) {
           setpgid(0, 0);
 
-	  if (tcsetpgrp(shell_terminal, getpgrp()) < 0) {
-                perror("tcsetpgrp failed");
-                return 0;
-          }
+         tcsetpgrp(STDIN_FILENO, getpgrp());
 
 	 signal(SIGINT, SIG_DFL);
          signal(SIGQUIT, SIG_DFL);
          signal(SIGTSTP, SIG_DFL);
          signal(SIGCONT, SIG_DFL);
          signal(SIGTTIN, SIG_DFL);
-         signal(SIGTTOU, SIG_IGN);
+         signal(SIGTTOU, SIG_DFL);
 	 signal(SIGTERM, SIG_DFL);
 
 	  size_t num_args = tokens_get_length(tokens);
@@ -256,19 +260,17 @@ int main(unused int argc, unused char *argv[]) {
                 perror("tcsetpgrp failed");
                 return 0;
           }
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	signal(SIGTERM, SIG_IGN);
+	//signal(SIGINT, SIG_IGN);
+	//signal(SIGQUIT, SIG_IGN);
+	//signal(SIGTERM, SIG_IGN);
+	//signal(SIGTSTP, SIG_IGN);
+        //signal(SIGCONT, SIG_IGN);
 	wait(&status);
-	tcsetpgrp(shell_terminal, shell_pgid);
-	signal(SIGINT, SIG_DFL);
-        signal(SIGQUIT, SIG_DFL);
-        signal(SIGTERM, SIG_DFL);
    } else {
 	  perror("fork failed\n");
    }
    }
-  
+    tcsetpgrp(STDIN_FILENO, getpgrp());
     if (shell_is_interactive)
       /* Please only print shell prompts when standard input is not a tty */
       fprintf(stdout, "%d: ", ++line_num);
